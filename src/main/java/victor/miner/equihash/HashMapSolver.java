@@ -93,7 +93,7 @@ public class HashMapSolver extends Solver implements Cancelable {
 
 	@Override
 	public List<byte[]> solve(byte[] work) {
-		return solve(work, 8);
+		return solve(work, 16);
 	}
 
 	@Override
@@ -141,29 +141,109 @@ public class HashMapSolver extends Solver implements Cancelable {
 		
 		
 		for(int i = 1; i < 10; i++) {
+			if (isCancelled()) return result;
 			
 			System.out.println(i + " : " + hashes.size());
-			Map<Integer, Object> newHashes = Collections.synchronizedMap(new HashMap<Integer, Object>());
+			final Map<Integer, Object> newHashes = Collections.synchronizedMap(new HashMap<Integer, Object>());
 			
-			
+			final int i2 = i;
 			final CountDownLatch latch = new CountDownLatch(threadsNum);
 			
-			Function<Integer, Void> f = (c) -> {
 
-				Object objCollide = null;
-				synchronized(hashes) {
-					if (!hashes.isEmpty()) {
-						
-					}
-				}
+			
+			Function<List<Integer>, Void> f = (c) -> {
+
+				for(int key : c) {
+					Object objCollide = hashes.get(key);
 				
+					if (objCollide == null || isCancelled()) {
+						break;
+					}
+					if (!(objCollide instanceof List)) {
+						((HashNode)objCollide).dropHash();
+						continue;
+					}
+					List<HashNode> collided = (List<HashNode>)objCollide;
+					for(int j = 0; j < collided.size() - 1; j++) {
+						out1:
+						for(int k = j+1; k < collided.size(); k++) {
+							if (j == k) {
+								continue;
+							}
+							HashNode node1 = collided.get(j);
+							HashNode node2 = collided.get(k);
+	//							if (i > 1 && (  ((HashMidNode)node1).left == ((HashMidNode)node2).left ||
+	//											((HashMidNode)node1).left == ((HashMidNode)node2).right ||
+	//											((HashMidNode)node1).right == ((HashMidNode)node2).left ||
+	//											((HashMidNode)node1).right == ((HashMidNode)node2).right   )) {
+	//								continue;
+	//							}
+							int[] inds1 = node1.getIndexes();
+							int[] inds2 = node2.getIndexes();
+							
+							if (inds1[0] > inds2[0]) {
+								int[] temp = inds1;
+								inds1 = inds2;
+								inds2 = temp;
+								HashNode tempNode = node1;
+								node1 = node2;
+								node2 = tempNode;
+							}
+							
+							int[] allInds = ArrayUtils.addAll(inds1, inds2);
+							
+							Set<Integer> indices = new HashSet<>();
+							for(int z : allInds) {
+								if (indices.contains(z)) {
+									continue out1;
+								}
+								indices.add(z);
+							}
+							
+							if (node1.getHash() == null || node2.getHash() == null) {
+								System.out.println("here");//TODO
+							}
+							
+							HashNode node = new HashMidNode(xorExcept1stNbytes(node1.getHash(), node2.getHash(), 2 + ((i2+1) % 2)), node1, node2);
+							
+							final int bits = get20bits(node.getHash(), i2 % 2 == 1);
+							if (i2 == 9 && bits != 0) {
+								continue;
+							}
+							
+							if (!newHashes.containsKey(bits)) {
+								newHashes.put(bits, node);
+							} else {
+								Object obj = newHashes.get(bits);
+								if (obj instanceof HashNode) {
+									List<HashNode> collide = Collections.synchronizedList(new ArrayList<>(2));
+									collide.add((HashNode)obj);
+									collide.add(node);
+									newHashes.put(bits, collide);
+								} else {
+									((List<HashNode>)obj).add(node);
+								}
+							}
+						}					
+
+					}
+					
+					for(HashNode node : collided) {
+						node.dropHash();
+					}
+					
+				}
 				latch.countDown();
 				return null;
 			};
 
+			final List<Integer> keys = new ArrayList<>(hashes.keySet());
+			
+			int portion = (keys.size()+threadsNum-1)/threadsNum;
 			for(int t = 0; t < threadsNum; t++) {
-				final int j = t;
-				new Thread(()-> {f.apply(j);}).start();
+				List<Integer> partOfKeys = keys.subList(t*portion, Math.min((t+1)*portion, keys.size()-1));
+				//final int j = t;
+				new Thread(()-> {f.apply(partOfKeys);}).start();
 			}
 			try {
 				latch.await();
@@ -172,78 +252,6 @@ public class HashMapSolver extends Solver implements Cancelable {
 			}
 			
 			
-			for(Object objCollide : hashes.values()) {
-				if (cancelled) return result;
-				if (!(objCollide instanceof List)) {
-					((HashNode)objCollide).dropHash();
-					continue;
-				}
-//				if (newHashes.size() > 900000) {//TODO
-//					break;
-//				}
-				List<HashNode> collided = (List<HashNode>)objCollide;
-				for(int j = 0; j < collided.size() - 1; j++) {
-					out1:
-					for(int k = j+1; k < collided.size(); k++) {
-						if (j == k) {
-							continue;
-						}
-						HashNode node1 = collided.get(j);
-						HashNode node2 = collided.get(k);
-//						if (i > 1 && (  ((HashMidNode)node1).left == ((HashMidNode)node2).left ||
-//										((HashMidNode)node1).left == ((HashMidNode)node2).right ||
-//										((HashMidNode)node1).right == ((HashMidNode)node2).left ||
-//										((HashMidNode)node1).right == ((HashMidNode)node2).right   )) {
-//							continue;
-//						}
-						int[] inds1 = node1.getIndexes();
-						int[] inds2 = node2.getIndexes();
-						
-						if (inds1[0] > inds2[0]) {
-							int[] temp = inds1;
-							inds1 = inds2;
-							inds2 = temp;
-							HashNode tempNode = node1;
-							node1 = node2;
-							node2 = tempNode;
-						}
-						
-						int[] allInds = ArrayUtils.addAll(inds1, inds2);
-						
-						Set<Integer> indices = new HashSet<>();
-						for(int z : allInds) {
-							if (indices.contains(z)) {
-								continue out1;
-							}
-							indices.add(z);
-						}
-						
-						HashNode node = new HashMidNode(xorExcept1stNbytes(node1.getHash(), node2.getHash(), 2 + ((i+1) % 2)), node1, node2);
-						
-						final int bits = get20bits(node.getHash(), i % 2 == 1);
-						if (i == 9 && bits != 0) {
-							continue;
-						}
-						
-						if (!newHashes.containsKey(bits)) {
-							newHashes.put(bits, node);
-						} else {
-							Object obj = newHashes.get(bits);
-							if (obj instanceof HashNode) {
-								List<HashNode> collide = new ArrayList<>(2);
-								collide.add((HashNode)obj);
-								collide.add(node);
-								newHashes.put(bits, collide);
-							} else {
-								((List<HashNode>)obj).add(node);
-							}
-						}
-					}
-				}
-				for(HashNode node : collided) {
-					node.dropHash();
-				}
-			}
 			hashes.clear();
 			hashes.putAll(newHashes);
 //			hashes = newHashes;
@@ -341,7 +349,7 @@ public class HashMapSolver extends Solver implements Cancelable {
 		
 		do { 
 			String newNonce = new BigInteger(300, new Random()).toString(16) + "000000000000000000000000000000000000000000000000000000";
-//			nonceRight = newNonce.substring(0, nonceRight.length());
+			nonceRight = newNonce.substring(0, nonceRight.length());
 			System.out.println(nonceRight);
 		} while((solutions = solver.solve(version, prevhash, merkleRoot, reserved, ntime, nbits, nonceLeft, nonceRight)).size() == 0);
 		System.out.println("Sols : " + solutions.size());

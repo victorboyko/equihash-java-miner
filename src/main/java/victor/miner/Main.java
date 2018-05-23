@@ -22,7 +22,8 @@ public class Main {
 	public static void main(String[] args) {
 		
 		//String argsStr = "--server zel.cloudpools.net --user t1TFwDdJ9LWF3wMw8rh4KmN2Hkrcr71ymcF.javaRig1 --pass x --port 3052";
-		String argsStr = "--server eu1-zcash.flypool.org --user t1VL1tTafDkVnvkiS4R84Mey5WWYKcgMpKf.javaRig1 --pass x --port 3333";
+		//String argsStr = "--server eu1-zcash.flypool.org --user t1VL1tTafDkVnvkiS4R84Mey5WWYKcgMpKf.javaRig1 --pass x --port 3333";
+		String argsStr = "--server zen.suprnova.cc --user log121.mainRig1 --pass d=4 --port 3618";
 		args = argsStr.split(" ");
 		
 		PoolCredentials poolCreds = PoolCredentials.getFromArgs(args);
