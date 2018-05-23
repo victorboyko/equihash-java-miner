@@ -58,18 +58,19 @@ public class StratumClient {
 		solver = new HashMapSolver();
 		Solver curSolver = solver;
 			while(curSolver == solver) {
-			nonceRight = String.valueOf(++nonceCnt);
-			nonceRight = "00000000".substring(nonceRight.length()) + nonceRight;
+			nonceRight = "0000000000000000000000000000000000000000000000000000000000000000" + String.valueOf(++nonceCnt);
+			nonceRight = nonceRight.substring(nonceRight.length()-64+nonceLeft.length());
 			String jobId = job_id;
 			String workStr = nversion + hash_prev_block + hash_merkle_root + hash_reserved + ntime + nbits + nonceLeft + nonceRight;
 			String curTarget = target;
 			String curNtime = ntime;
 			String curNonceRight = nonceRight;
 			List<String> solutions = solver.solve(nversion, hash_prev_block, hash_merkle_root, hash_reserved, ntime, nbits, nonceLeft, nonceRight);
-			List<String> shares = getSharesFromSolutions(solutions, workStr, curTarget);
+			//List<String> shares = getSharesFromSolutions(solutions, workStr, curTarget);
+			List<String> shares = solutions; //TODO
 			System.out.println("Shares : " + shares.size());
 			for(String share : shares) {
-				sendMessage(new SubmitMessage(nextMessageIndex++, creds.username, jobId, curNtime, curNonceRight, share));
+				sendMessage(new SubmitMessage(nextMessageIndex++, creds.username, jobId, curNtime, curNonceRight, share.replace('0', '1').replace('a', 'f'))); //TODO
 			}
 
 		}
