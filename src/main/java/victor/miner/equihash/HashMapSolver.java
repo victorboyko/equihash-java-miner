@@ -149,10 +149,8 @@ public class HashMapSolver extends Solver implements Cancelable {
 			final int i2 = i;
 			final CountDownLatch latch = new CountDownLatch(threadsNum);
 			
-
-			
 			Function<List<Integer>, Void> f = (c) -> {
-
+				
 				for(int key : c) {
 					Object objCollide = hashes.get(key);
 				
@@ -172,12 +170,12 @@ public class HashMapSolver extends Solver implements Cancelable {
 							}
 							HashNode node1 = collided.get(j);
 							HashNode node2 = collided.get(k);
-	//							if (i > 1 && (  ((HashMidNode)node1).left == ((HashMidNode)node2).left ||
-	//											((HashMidNode)node1).left == ((HashMidNode)node2).right ||
-	//											((HashMidNode)node1).right == ((HashMidNode)node2).left ||
-	//											((HashMidNode)node1).right == ((HashMidNode)node2).right   )) {
-	//								continue;
-	//							}
+//							if (i2 > 1 && (  ((HashMidNode)node1).left == ((HashMidNode)node2).left ||
+//											((HashMidNode)node1).left == ((HashMidNode)node2).right ||
+//											((HashMidNode)node1).right == ((HashMidNode)node2).left ||
+//											((HashMidNode)node1).right == ((HashMidNode)node2).right   )) {
+//								continue;
+//							}
 							int[] inds1 = node1.getIndexes();
 							int[] inds2 = node2.getIndexes();
 							
@@ -198,10 +196,6 @@ public class HashMapSolver extends Solver implements Cancelable {
 									continue out1;
 								}
 								indices.add(z);
-							}
-							
-							if (node1.getHash() == null || node2.getHash() == null) {
-								System.out.println("here");//TODO
 							}
 							
 							HashNode node = new HashMidNode(xorExcept1stNbytes(node1.getHash(), node2.getHash(), 2 + ((i2+1) % 2)), node1, node2);
@@ -227,7 +221,6 @@ public class HashMapSolver extends Solver implements Cancelable {
 						}					
 
 					}
-					
 					for(HashNode node : collided) {
 						node.dropHash();
 					}
@@ -254,8 +247,8 @@ public class HashMapSolver extends Solver implements Cancelable {
 			
 			hashes.clear();
 			hashes.putAll(newHashes);
-//			hashes = newHashes;
-			System.gc();
+			
+			//System.gc();
 		}
 		
 		FileOutputStream fos = null;
@@ -267,28 +260,7 @@ public class HashMapSolver extends Solver implements Cancelable {
 			e.printStackTrace();
 			System.exit(-1);
 		}
-		/*
-		class EQArray {
-			int[] data;
-			public EQArray(int[] arr) {
-				data = arr;
-			}
-			@Override
-			public boolean equals(Object obj) {
-				if (obj == this) return true;
-				if (!(obj instanceof EQArray)) return false;
-				EQArray o2 = (EQArray)obj;
-				return Arrays.equals(data, o2.data);
-			}
-			@Override
-			public int hashCode() {
-				return data[5]+data[27]<<21;
-			}
-		}
-		
-		Set<EQArray> bank = new HashSet<>();
-		*/
-		Set<String> uniqueSols = new HashSet<>();
+
 		
 		System.out.println(10 + " : " + hashes.size());
 		int cnt = 0;
@@ -304,12 +276,8 @@ public class HashMapSolver extends Solver implements Cancelable {
 				byte[] solArray = compressSolutionTo21BitIndexes(node.getIndexes());
 				String sol = byteArrayToHexString(solArray);
 				
-				if (!uniqueSols.contains(sol)) {
-					uniqueSols.add(sol);
-					result.add(solArray);
-					pw.println(sol);
-					if (result.size() >= 30) break out2; // ! 30 is enough TODO						
-				}				
+				result.add(solArray);
+				pw.println(sol);
 				
 			}
 			

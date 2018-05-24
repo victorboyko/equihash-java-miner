@@ -66,11 +66,11 @@ public class StratumClient {
 			String curNtime = ntime;
 			String curNonceRight = nonceRight;
 			List<String> solutions = solver.solve(nversion, hash_prev_block, hash_merkle_root, hash_reserved, ntime, nbits, nonceLeft, nonceRight);
-			//List<String> shares = getSharesFromSolutions(solutions, workStr, curTarget);
-			List<String> shares = solutions; //TODO
+			List<String> shares = getSharesFromSolutions(solutions, workStr, curTarget);
+			//List<String> shares = solutions;
 			System.out.println("Shares : " + shares.size());
 			for(String share : shares) {
-				sendMessage(new SubmitMessage(nextMessageIndex++, creds.username, jobId, curNtime, curNonceRight, share.replace('0', '1').replace('a', 'f'))); //TODO
+				sendMessage(new SubmitMessage(nextMessageIndex++, creds.username, jobId, curNtime, curNonceRight, share)); //TODO
 			}
 
 		}
