@@ -107,8 +107,10 @@ public class HashMapSolver extends Solver implements Cancelable {
 //		for(int t : new int[] {674126, 1254551, 78809, 1165243, 1339935, 1455771, 742821, 1200381}) {
 //			tracked.add(t);
 //		}
-		
-		
+		class IntWrapper {
+			int val;
+		}
+		final IntWrapper totalPairs = new IntWrapper();
 
 		for(int i = 0; i < hNum; i++) {
 			Digest d = getEquihash200_9PowDigest();
@@ -133,7 +135,12 @@ public class HashMapSolver extends Solver implements Cancelable {
 						collide.add(node);
 						hashes.put(bits, collide);
 					} else {
+						List<HashNode> collide = (List<HashNode>)obj;
+						totalPairs.val -=collide.size()*(collide.size()-1)/2;
+
 						((List<HashNode>)obj).add(node);
+						
+						totalPairs.val +=collide.size()*(collide.size()-1)/2;
 					}
 				}
 			}
@@ -143,7 +150,10 @@ public class HashMapSolver extends Solver implements Cancelable {
 		for(int i = 1; i < 10; i++) {
 			if (isCancelled()) return result;
 			
-			System.out.println(i + " : " + hashes.size());
+			//System.out.println(i + " : " + hashes.size());
+			System.out.println(i + " : " + totalPairs.val);
+			totalPairs.val = 0;
+			
 			final Map<Integer, Object> newHashes = Collections.synchronizedMap(new HashMap<Integer, Object>());
 			
 			final int i2 = i;
@@ -215,7 +225,12 @@ public class HashMapSolver extends Solver implements Cancelable {
 									collide.add(node);
 									newHashes.put(bits, collide);
 								} else {
+									List<HashNode> collide = (List<HashNode>)obj;
+									totalPairs.val -=collide.size()*(collide.size()-1)/2;
+
 									((List<HashNode>)obj).add(node);
+									
+									totalPairs.val +=collide.size()*(collide.size()-1)/2;
 								}
 							}
 						}					
@@ -267,10 +282,6 @@ public class HashMapSolver extends Solver implements Cancelable {
 		out2:
 		for(Object objCollide : hashes.values()) {
 			
-			if (cnt++ % 10000 == 0) {
-				System.out.printf("%.0f%% complete\n",  (100d * cnt/(hashes.size())));
-			}
-			
 			for(HashNode node : (objCollide instanceof List) ? ((List<HashNode>)objCollide) : Arrays.asList((HashNode)objCollide) ) {
 							
 				byte[] solArray = compressSolutionTo21BitIndexes(node.getIndexes());
@@ -282,7 +293,6 @@ public class HashMapSolver extends Solver implements Cancelable {
 			}
 			
 		}
-		System.out.println("100% complete");
 		
 		pw.flush();
 		pw.close();
